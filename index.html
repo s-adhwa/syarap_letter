@@ -437,9 +437,8 @@
     <section class="view" id="view-memories">
       <div class="bevel-panel">
         <h2 class="panel-heading">&#128247; Memories / Spawn Point</h2>
-        <p class="gallery-hint">A gallery of memories from the realm &mdash; up to 10 pictures.</p>
+        <p class="gallery-hint">A gallery of memories from our realm </p>
         <div class="gallery-grid" id="galleryGrid"></div>
-        <input type="file" id="galleryInput" accept="image/*" style="display:none;">
       </div>
     </section>
 
@@ -895,158 +894,73 @@ It's never goodbye between us, see you soon Carap!</div>
     invWrap.style.display = 'none';
   });
 
- /* ================= Memories gallery module ================= */
-  var GALLERY_SIZE = 10;
-  var galleryInput = document.getElementById('galleryInput');
-  var galleryGrid = document.getElementById('galleryGrid');
-  var uploadTargetIndex = -1;
+/* ================= Memories gallery module ================= */
+var galleryGrid = document.getElementById('galleryGrid');
 
-  var MEMORIES = [
-    { img: 'photo1.jpeg', caption: 'We love Syarap and Green Day' },
-    { img: 'photo2.jpeg', caption: "thank you rap selalu teman gi toilet :')" },
-    { img: 'photo3.jpeg', caption: 'lepasni Convo Syarap pulak yay!' },
-    { img: 'photo4.jpeg', caption: 'try semua benda dengan carap ^_^' },
-    { img: 'photo5.jpeg', caption: 'our first big concert together <3' },
-    { img: 'photo6.jpeg', caption: 'kita gi tengok monyet' },
-    { img: 'photo7.jpeg', caption: 'impromptu events on random weekends' },
-    { img: 'photo8.jpeg', caption: 'the night we walk from skatepark to arco sebab aku lupa kunci motor' },
-    { img: 'photo9.jpeg', caption: 'teacher and student moment (kau teacher aku student)' },
-    { img: 'photo10.jpeg', caption: 'we will never forget ur birthday' }
-    { img: 'photo11.jpeg', caption: 'Best fibo event assistant' }
-    { img: 'photo12.jpeg', caption: 'Pool jom rap?'}
-  ];
+var MEMORIES = [
+  { img: 'photo1.jpeg', caption: 'We love Syarap and Green Day' },
+  { img: 'photo2.jpeg', caption: "thank you rap selalu teman gi toilet :')" },
+  { img: 'photo3.jpeg', caption: 'lepasni Convo Syarap pulak yay!' },
+  { img: 'photo4.jpeg', caption: 'try semua benda dengan carap ^_^' },
+  { img: 'photo5.jpeg', caption: 'our first big concert together <3' },
+  { img: 'photo6.jpeg', caption: 'kita gi tengok monyet' },
+  { img: 'photo7.jpeg', caption: 'impromptu events on random weekends' },
+  { img: 'photo8.jpeg', caption: 'the night we walk from skatepark to arco sebab aku lupa kunci motor' },
+  { img: 'photo9.jpeg', caption: 'teacher and student moment (kau teacher aku student)' },
+  { img: 'photo10.jpeg', caption: 'we will never forget ur birthday' },
+  { img: 'photo11.jpeg', caption: 'Best fibo event assistant' },
+  { img: 'photo12.jpeg', caption: 'Pool jom rap?' }
+];
 
-  function loadMemories(){
-    return MEMORIES;
-  }
+function loadMemories(){
+  return MEMORIES;
+}
 
-  function saveMemories(){
-    // Local storage removed so everyone sees the exact same default photos
-    return true;
-  }
+function renderGallery(){
+  if (!galleryGrid) return;
+  galleryGrid.innerHTML = '';
   
-  function resizeImageForStorage(file, cb){
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      var img = new Image();
-      img.onload = function(){
-        var maxDim = 900;
-        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-        var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-        var c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        cb(c.toDataURL('image/jpeg', 0.82));
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+  var hasAny = MEMORIES.some(function(m){ return m && m.img; });
+  if(!hasAny){
+    var noteView = document.createElement('p');
+    noteView.className = 'gallery-empty-note';
+    noteView.textContent = 'No memories placed yet.';
+    galleryGrid.appendChild(noteView);
+    return;
   }
 
-  function renderGallery(){
-    galleryGrid.innerHTML = '';
-    var hasAny = MEMORIES.some(function(m){ return m && m.img; });
-    if(!hasAny){
-      var note = document.createElement('p');
-      note.className = 'gallery-empty-note edit-only';
-      note.textContent = 'No frames placed yet — add a photo below.';
-      galleryGrid.appendChild(note);
-      var noteView = document.createElement('p');
-      noteView.className = 'gallery-empty-note view-only';
-      noteView.textContent = 'No memories placed yet.';
-      galleryGrid.appendChild(noteView);
-    }
-    MEMORIES.forEach(function(mem, i){
-      var filled = !!(mem && mem.img);
-      var frame = document.createElement('div');
-      frame.className = 'gallery-frame' + (filled ? '' : ' empty');
+  MEMORIES.forEach(function(mem){
+    if (!mem || !mem.img) return;
 
-      var win = document.createElement('div');
-      win.className = 'frame-window';
-      var inner = document.createElement('div');
-      inner.className = 'inner' + (filled ? '' : ' clickable edit-only');
-      if(filled){
-        var img = document.createElement('img');
-        img.src = mem.img;
-        img.alt = (mem.caption && mem.caption.trim()) ? mem.caption : 'Memory photo';
-        inner.appendChild(img);
-        var rm = document.createElement('button');
-        rm.className = 'frame-remove edit-only';
-        rm.title = 'Remove photo';
-        rm.textContent = '×';
-        rm.addEventListener('click', function(ev){
-          ev.stopPropagation();
-          AudioEngine.click();
-          MEMORIES[i] = null;
-          saveMemories();
-          renderGallery();
-        });
-        win.appendChild(rm);
-      } else {
-        var label = document.createElement('span');
-        label.className = 'frame-empty-label';
-        label.textContent = 'Empty Frame';
-        inner.appendChild(label);
-      }
-      inner.addEventListener('click', function(){
-        AudioEngine.click();
-        uploadTargetIndex = i;
-        galleryInput.click();
-      });
-      win.appendChild(inner);
-      frame.appendChild(win);
+    var frame = document.createElement('div');
+    frame.className = 'gallery-frame';
 
+    var win = document.createElement('div');
+    win.className = 'frame-window';
+
+    var inner = document.createElement('div');
+    inner.className = 'inner';
+
+    var img = document.createElement('img');
+    img.src = mem.img;
+    img.alt = (mem.caption && mem.caption.trim()) ? mem.caption : 'Memory photo';
+    
+    inner.appendChild(img);
+    win.appendChild(inner);
+    frame.appendChild(win);
+
+    if (mem.caption) {
       var captionView = document.createElement('span');
       captionView.className = 'frame-caption-view';
-      captionView.textContent = (mem && mem.caption) ? mem.caption : '';
+      captionView.textContent = mem.caption;
       frame.appendChild(captionView);
+    }
 
-      var captionInput = document.createElement('input');
-      captionInput.type = 'text';
-      captionInput.className = 'frame-caption-input edit-only';
-      captionInput.maxLength = 60;
-      captionInput.placeholder = 'Add a caption…';
-      captionInput.value = (mem && mem.caption) ? mem.caption : '';
-      captionInput.addEventListener('input', function(){
-        if(!MEMORIES[i]) return;
-        MEMORIES[i].caption = captionInput.value;
-        captionView.textContent = captionInput.value;
-      });
-      captionInput.addEventListener('change', function(){ saveMemories(); });
-      if(filled){ frame.appendChild(captionInput); }
-
-      if(!filled){
-        var uploadBtn = document.createElement('button');
-        uploadBtn.className = 'mc-btn frame-upload-btn edit-only';
-        uploadBtn.textContent = 'Upload Photo';
-        uploadBtn.addEventListener('click', function(){
-          AudioEngine.click();
-          uploadTargetIndex = i;
-          galleryInput.click();
-        });
-        frame.appendChild(uploadBtn);
-      }
-
-      galleryGrid.appendChild(frame);
-    });
-  }
-
-  galleryInput.addEventListener('change', function(e){
-    var file = e.target.files[0];
-    galleryInput.value = '';
-    if(!file || uploadTargetIndex < 0) return;
-    resizeImageForStorage(file, function(dataUrl){
-      MEMORIES[uploadTargetIndex] = {img: dataUrl, caption: (MEMORIES[uploadTargetIndex] && MEMORIES[uploadTargetIndex].caption) || ''};
-      AudioEngine.click();
-      if(!saveMemories()){
-        MEMORIES[uploadTargetIndex] = null;
-        alert('Storage is full — remove a photo before adding another.');
-      }
-      renderGallery();
-    });
+    galleryGrid.appendChild(frame);
   });
+}
 
-  renderGallery();
+renderGallery();
 
   /* ================= Keyboard shortcuts ================= */
   document.addEventListener('keydown', function(e){
